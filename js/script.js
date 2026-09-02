@@ -29,6 +29,14 @@ function escapeHtml(value){
 function updateAuthNavigation(){
   const actions = qs('.nav-actions');
   if(!actions || !arenaIsLoggedIn()) return;
+
+  if(!document.querySelector('#arenaAccountStyles')){
+    const style = document.createElement('style');
+    style.id = 'arenaAccountStyles';
+    style.textContent = '.account-menu{display:flex;align-items:center;gap:10px}.account-welcome{font-size:10px;color:#aaa;white-space:nowrap}.account-welcome strong{color:#fff}.account-menu .btn{padding:9px 13px;font-size:10px}@media(max-width:900px){.account-welcome{display:none}}';
+    document.head.appendChild(style);
+  }
+
   const user = getArenaUser();
   actions.querySelector('a[href="login.html"]')?.remove();
   actions.querySelector('a[href="signup.html"]')?.remove();
