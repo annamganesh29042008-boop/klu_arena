@@ -2,6 +2,7 @@ const AUTH_ACCOUNTS_KEY = 'kluArenaAccounts';
 const AUTH_SESSION_KEY = 'kluArenaLoggedIn';
 const AUTH_ID_KEY = 'kluArenaLoginId';
 const AUTH_USER_KEY = 'kluArenaUser';
+const AUTH_NOTIFICATION_SEEN_KEY = 'kluArenaAnnouncementsSeen';
 
 function getAccounts(){
   try { const accounts = JSON.parse(localStorage.getItem(AUTH_ACCOUNTS_KEY) || '[]'); if(Array.isArray(accounts)) return accounts; }
@@ -34,6 +35,8 @@ function setLogin(user,remember){
   storage.setItem(AUTH_USER_KEY,JSON.stringify(publicUser(user)));
   storage.setItem(AUTH_SESSION_KEY,'true');
   localStorage.setItem(AUTH_ID_KEY,user.email);
+  // A fresh login starts a fresh announcements notification cycle.
+  localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
   if(remember){ sessionStorage.removeItem(AUTH_USER_KEY); sessionStorage.removeItem(AUTH_SESSION_KEY); }
 }
 async function loginAccount(identifier,password,remember){
@@ -50,7 +53,7 @@ async function resetPassword(identifier,newPassword){
   accounts[index].passwordHash = await hashPassword(newPassword); saveAccounts(accounts);
 }
 function logoutAccount(){
-  localStorage.removeItem(AUTH_SESSION_KEY); localStorage.removeItem(AUTH_USER_KEY); localStorage.removeItem(AUTH_ID_KEY);
+  localStorage.removeItem(AUTH_SESSION_KEY); localStorage.removeItem(AUTH_USER_KEY); localStorage.removeItem(AUTH_ID_KEY); localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
   sessionStorage.removeItem(AUTH_SESSION_KEY); sessionStorage.removeItem(AUTH_USER_KEY);
 }
 function requireLogin(next = location.pathname.split('/').pop() || 'index.html'){
