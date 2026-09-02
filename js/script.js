@@ -23,12 +23,24 @@ function arenaIsLoggedIn(){
 }
 
 function escapeHtml(value){
-  return String(value).replace(/[&<>\'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  return String(value).replace(/[&<>\'\"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','\"':'&quot;'}[ch]));
+}
+
+function updateNotificationIndicator(){
+  const buttons = qsa('.notification-btn');
+  if(!buttons.length) return;
+  const loggedIn = arenaIsLoggedIn();
+  const seen = localStorage.getItem('kluArenaAnnouncementsSeen') === 'true';
+  buttons.forEach(btn => {
+    btn.classList.toggle('has-notifications', loggedIn && !seen);
+    btn.setAttribute('aria-label', loggedIn && !seen ? 'New announcements' : 'Announcements');
+    btn.setAttribute('title', loggedIn && !seen ? 'New announcements' : 'Announcements');
+  });
 }
 
 function updateAuthNavigation(){
   const actions = qs('.nav-actions');
-  if(!actions || !arenaIsLoggedIn()) return;
+  if(!actions || !arenaIsLoggedIn()) { updateNotificationIndicator(); return; }
 
   if(!document.querySelector('#arenaAccountStyles')){
     const style = document.createElement('style');
@@ -51,12 +63,14 @@ function updateAuthNavigation(){
       localStorage.removeItem('kluArenaLoggedIn');
       localStorage.removeItem('kluArenaUser');
       localStorage.removeItem('kluArenaLoginId');
+      localStorage.removeItem('kluArenaAnnouncementsSeen');
       sessionStorage.removeItem('kluArenaLoggedIn');
       sessionStorage.removeItem('kluArenaUser');
       showToast('Logged out successfully.');
       setTimeout(() => location.href = 'index.html', 400);
     });
   }
+  updateNotificationIndicator();
 }
 
 function createSearchOverlay(){
@@ -133,7 +147,11 @@ const mainNav = qs('#mainNav');
 if(menuToggle && mainNav){ menuToggle.addEventListener('click', () => { const open = mainNav.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); }); }
 createSearchOverlay();
 qs('#searchBtn')?.addEventListener('click', () => window.openArenaSearch?.());
-qs('#notificationBtn')?.addEventListener('click', () => { window.location.href = 'announcements.html'; });
+qsa('.notification-btn').forEach(btn => btn.addEventListener('click', () => {
+  if(arenaIsLoggedIn()) localStorage.setItem('kluArenaAnnouncementsSeen', 'true');
+  updateNotificationIndicator();
+  window.location.href = 'announcements.html';
+}));
 qsa('.bookmark').forEach(btn => btn.addEventListener('click', () => { btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; showToast(btn.classList.contains('saved') ? 'Tournament saved.' : 'Tournament removed from saved list.'); }));
 qsa('a[href="#"]').forEach(link => link.addEventListener('click', e => e.preventDefault()));
 const searchParam = new URLSearchParams(window.location.search).get('search');
@@ -141,3 +159,4 @@ const tournamentSearch = qs('#searchInput');
 if(searchParam && tournamentSearch){ tournamentSearch.value = searchParam; tournamentSearch.dispatchEvent(new Event('input', {bubbles:true})); }
 qsa('[data-current-year]').forEach(el => el.textContent = new Date().getFullYear());
 updateAuthNavigation();
+updateNotificationIndicator();
