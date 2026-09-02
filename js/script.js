@@ -29,6 +29,14 @@ function escapeHtml(value){
 function updateNotificationIndicator(){
   const buttons = qsa('.notification-btn');
   if(!buttons.length) return;
+
+  if(!document.querySelector('#arenaNotificationStyles')){
+    const style = document.createElement('style');
+    style.id = 'arenaNotificationStyles';
+    style.textContent = '.notification-btn span{display:none!important;position:absolute;right:3px;top:3px;width:7px;height:7px;padding:0!important;background:var(--red);border-radius:50%;font-size:0!important;line-height:0!important;box-shadow:0 0 9px rgba(229,9,20,.8)}.notification-btn.has-notifications span{display:block!important}';
+    document.head.appendChild(style);
+  }
+
   const loggedIn = arenaIsLoggedIn();
   const seen = localStorage.getItem('kluArenaAnnouncementsSeen') === 'true';
   buttons.forEach(btn => {
