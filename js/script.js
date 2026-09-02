@@ -19,8 +19,11 @@ if(menuToggle && mainNav){
   });
 }
 
-qs('#searchBtn')?.addEventListener('click', () => showToast('Search is ready — use the Tournaments page filters.'));
-qs('#notificationBtn')?.addEventListener('click', () => showToast('You have 3 tournament notifications.'));
+qs('#searchBtn')?.addEventListener('click', () => {
+  const term = window.prompt('Search KLU Arena tournaments:');
+  if(term && term.trim()) window.location.href = 'tournaments.html?search=' + encodeURIComponent(term.trim());
+});
+qs('#notificationBtn')?.addEventListener('click', () => showToast('3 updates: registration deadline, match reminder and leaderboard update.'));
 
 qsa('.bookmark').forEach(btn => btn.addEventListener('click', () => {
   btn.classList.toggle('saved');
@@ -30,5 +33,11 @@ qsa('.bookmark').forEach(btn => btn.addEventListener('click', () => {
 
 qsa('a[href="#"]').forEach(link => link.addEventListener('click', e => e.preventDefault()));
 
-// Keep the footer year current on every page using this shared script.
+const searchParam = new URLSearchParams(window.location.search).get('search');
+const tournamentSearch = qs('#searchInput');
+if(searchParam && tournamentSearch){
+  tournamentSearch.value = searchParam;
+  tournamentSearch.dispatchEvent(new Event('input', {bubbles:true}));
+}
+
 qsa('[data-current-year]').forEach(el => el.textContent = new Date().getFullYear());
