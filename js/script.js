@@ -104,96 +104,40 @@ function createSearchOverlay(){
     <div class="search-backdrop" data-search-close></div>
     <section class="search-panel" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
       <div class="search-panel-top">
-        <div>
-          <p class="kicker">KLU ARENA SEARCH</p>
-          <h2 id="searchTitle">FIND YOUR <span>ARENA.</span></h2>
-        </div>
+        <div><p class="kicker">KLU ARENA SEARCH</p><h2 id="searchTitle">FIND YOUR <span>ARENA.</span></h2></div>
         <button class="search-close" type="button" aria-label="Close search" data-search-close>×</button>
       </div>
       <form id="siteSearchForm" class="site-search-form">
         <input id="siteSearchInput" type="search" autocomplete="off" placeholder="Search tournaments, sports, esports or teams..." aria-label="Search KLU Arena">
         <button type="submit">SEARCH <span>→</span></button>
       </form>
-      <div class="search-quick">
-        <p>QUICK SEARCH</p>
-        <div class="search-tags">
-          <button type="button" data-search-term="Cricket">Cricket</button>
-          <button type="button" data-search-term="Football">Football</button>
-          <button type="button" data-search-term="Badminton">Badminton</button>
-          <button type="button" data-search-term="Valorant">Valorant</button>
-          <button type="button" data-search-term="BGMI">BGMI</button>
-          <button type="button" data-search-term="CS2">CS2</button>
-          <button type="button" data-search-term="Free Fire">Free Fire</button>
-          <button type="button" data-search-term="Table Tennis">Table Tennis</button>
-        </div>
-      </div>
+      <div class="search-quick"><p>QUICK SEARCH</p><div class="search-tags">
+        <button type="button" data-search-term="Cricket">Cricket</button><button type="button" data-search-term="Football">Football</button><button type="button" data-search-term="Badminton">Badminton</button><button type="button" data-search-term="Valorant">Valorant</button><button type="button" data-search-term="BGMI">BGMI</button><button type="button" data-search-term="CS2">CS2</button><button type="button" data-search-term="Free Fire">Free Fire</button><button type="button" data-search-term="Table Tennis">Table Tennis</button>
+      </div></div>
       <div class="search-hint">Press <kbd>Enter</kbd> to search • Press <kbd>Esc</kbd> to close</div>
-    </section>
-  `;
+    </section>`;
   document.body.appendChild(overlay);
 
   const input = qs('#siteSearchInput');
-  const close = () => {
-    overlay.classList.remove('open');
-    document.body.classList.remove('search-open');
-    setTimeout(() => input?.blur(), 150);
-  };
-  const open = (term = '') => {
-    overlay.classList.add('open');
-    document.body.classList.add('search-open');
-    input.value = term;
-    setTimeout(() => input.focus(), 80);
-  };
-
+  const close = () => { overlay.classList.remove('open'); document.body.classList.remove('search-open'); setTimeout(() => input?.blur(), 150); };
+  const open = (term = '') => { overlay.classList.add('open'); document.body.classList.add('search-open'); input.value = term; setTimeout(() => input.focus(), 80); };
   qsa('[data-search-close]').forEach(el => el.addEventListener('click', close));
-  qsa('[data-search-term]').forEach(btn => btn.addEventListener('click', () => {
-    input.value = btn.dataset.searchTerm || '';
-    qs('#siteSearchForm').requestSubmit();
-  }));
-
-  qs('#siteSearchForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const term = input.value.trim();
-    if(!term){ input.focus(); return; }
-    close();
-    window.location.href = 'tournaments.html?search=' + encodeURIComponent(term);
-  });
-
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape' && overlay.classList.contains('open')) close();
-  });
-
+  qsa('[data-search-term]').forEach(btn => btn.addEventListener('click', () => { input.value = btn.dataset.searchTerm || ''; qs('#siteSearchForm').requestSubmit(); }));
+  qs('#siteSearchForm').addEventListener('submit', e => { e.preventDefault(); const term = input.value.trim(); if(!term){ input.focus(); return; } close(); window.location.href = 'tournaments.html?search=' + encodeURIComponent(term); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && overlay.classList.contains('open')) close(); });
   window.openArenaSearch = open;
 }
 
 const menuToggle = qs('#menuToggle');
 const mainNav = qs('#mainNav');
-if(menuToggle && mainNav){
-  menuToggle.addEventListener('click', () => {
-    const open = mainNav.classList.toggle('open');
-    menuToggle.setAttribute('aria-expanded', String(open));
-  });
-}
-
+if(menuToggle && mainNav){ menuToggle.addEventListener('click', () => { const open = mainNav.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); }); }
 createSearchOverlay();
 qs('#searchBtn')?.addEventListener('click', () => window.openArenaSearch?.());
-
-qs('#notificationBtn')?.addEventListener('click', () => showToast('3 updates: registration deadline, match reminder and leaderboard update.'));
-
-qsa('.bookmark').forEach(btn => btn.addEventListener('click', () => {
-  btn.classList.toggle('saved');
-  btn.textContent = btn.classList.contains('saved') ? '♥' : '♡';
-  showToast(btn.classList.contains('saved') ? 'Tournament saved.' : 'Tournament removed from saved list.');
-}));
-
+qs('#notificationBtn')?.addEventListener('click', () => { window.location.href = 'announcements.html'; });
+qsa('.bookmark').forEach(btn => btn.addEventListener('click', () => { btn.classList.toggle('saved'); btn.textContent = btn.classList.contains('saved') ? '♥' : '♡'; showToast(btn.classList.contains('saved') ? 'Tournament saved.' : 'Tournament removed from saved list.'); }));
 qsa('a[href="#"]').forEach(link => link.addEventListener('click', e => e.preventDefault()));
-
 const searchParam = new URLSearchParams(window.location.search).get('search');
 const tournamentSearch = qs('#searchInput');
-if(searchParam && tournamentSearch){
-  tournamentSearch.value = searchParam;
-  tournamentSearch.dispatchEvent(new Event('input', {bubbles:true}));
-}
-
+if(searchParam && tournamentSearch){ tournamentSearch.value = searchParam; tournamentSearch.dispatchEvent(new Event('input', {bubbles:true})); }
 qsa('[data-current-year]').forEach(el => el.textContent = new Date().getFullYear());
 updateAuthNavigation();
