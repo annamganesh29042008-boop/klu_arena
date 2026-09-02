@@ -10,6 +10,47 @@ function showToast(message){
   window.__toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
 }
 
+function getArenaUser(){
+  try {
+    const sessionUser = sessionStorage.getItem('kluArenaUser');
+    const persistentUser = localStorage.getItem('kluArenaUser');
+    return JSON.parse(sessionUser || persistentUser || 'null');
+  } catch { return null; }
+}
+
+function arenaIsLoggedIn(){
+  return sessionStorage.getItem('kluArenaLoggedIn') === 'true' || localStorage.getItem('kluArenaLoggedIn') === 'true';
+}
+
+function escapeHtml(value){
+  return String(value).replace(/[&<>\'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+
+function updateAuthNavigation(){
+  const actions = qs('.nav-actions');
+  if(!actions || !arenaIsLoggedIn()) return;
+  const user = getArenaUser();
+  actions.querySelector('a[href="login.html"]')?.remove();
+  actions.querySelector('a[href="signup.html"]')?.remove();
+
+  if(!actions.querySelector('#accountMenu')){
+    const account = document.createElement('div');
+    account.id = 'accountMenu';
+    account.className = 'account-menu';
+    account.innerHTML = `<span class="account-welcome">Welcome, <strong>${escapeHtml(user?.name || 'Player')}</strong></span><button class="btn btn-outline" id="logoutBtn" type="button">Logout</button>`;
+    actions.appendChild(account);
+    account.querySelector('#logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('kluArenaLoggedIn');
+      localStorage.removeItem('kluArenaUser');
+      localStorage.removeItem('kluArenaLoginId');
+      sessionStorage.removeItem('kluArenaLoggedIn');
+      sessionStorage.removeItem('kluArenaUser');
+      showToast('Logged out successfully.');
+      setTimeout(() => location.href = 'index.html', 400);
+    });
+  }
+}
+
 const menuToggle = qs('#menuToggle');
 const mainNav = qs('#mainNav');
 if(menuToggle && mainNav){
@@ -41,3 +82,4 @@ if(searchParam && tournamentSearch){
 }
 
 qsa('[data-current-year]').forEach(el => el.textContent = new Date().getFullYear());
+updateAuthNavigation();
