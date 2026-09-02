@@ -80,7 +80,6 @@ function createSearchOverlay(){
       .search-close:hover{color:#fff;border-color:#e50914;background:#16090b}
       .site-search-form{display:grid;grid-template-columns:1fr auto;gap:10px;padding:7px;background:#070708;border:1px solid #3b3032;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)}
       .site-search-form:focus-within{border-color:#e50914;box-shadow:0 0 0 3px rgba(229,9,20,.1)}
-      .site-search-form .search-input-icon{display:none}
       .site-search-form input{min-width:0;border:0;outline:0;background:transparent;color:#fff;padding:13px 12px;font-size:14px}
       .site-search-form input::placeholder{color:#66666d}
       .site-search-form input::-webkit-search-cancel-button{filter:invert(1);opacity:.5}
