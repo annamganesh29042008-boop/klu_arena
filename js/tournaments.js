@@ -42,28 +42,7 @@ function addTournamentPhotos(){
     image.style.backgroundPosition = 'center';
     const icon = image.querySelector('.image-icon');
     if(icon) icon.style.display = 'none';
-
-    if(game === 'Cricket'){
-      image.classList.add('cricket-photo');
-      if(!image.querySelector('.jersey-number')){
-        const number = document.createElement('span');
-        number.className = 'jersey-number';
-        number.textContent = '18';
-        number.setAttribute('aria-label', 'KLU cricket jersey number 18');
-        image.appendChild(number);
-      }
-    }
   });
-
-  if(!document.querySelector('#tournamentPhotoStyles')){
-    const style = document.createElement('style');
-    style.id = 'tournamentPhotoStyles';
-    style.textContent = `
-      .browse-image.cricket-photo:after{background:linear-gradient(180deg,rgba(0,0,0,.03),rgba(0,0,0,.38))}
-      .jersey-number{position:absolute;left:50%;top:47%;transform:translate(-50%,-50%) rotate(-5deg);z-index:4;color:#fff;font:900 38px/1 var(--font-head);font-style:italic;letter-spacing:-1px;text-shadow:0 2px 5px rgba(0,0,0,.85),0 0 2px #0b3150;pointer-events:none}
-    `;
-    document.head.appendChild(style);
-  }
 }
 
 tabs.forEach(tab => tab.addEventListener('click', () => {
