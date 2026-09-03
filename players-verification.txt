@@ -1,0 +1,1 @@
+Players section verification marker: player directory, stats cards, filters, ON FIRE badge, profile route, and shared player data were added.
