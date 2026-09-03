@@ -6,7 +6,21 @@ const AUTH_NOTIFICATION_SEEN_KEY = 'kluArenaAnnouncementsSeen';
 const RESET_STATE_KEY = 'kluArenaPasswordReset';
 const RESET_CODE_TTL = 10 * 60 * 1000;
 const RESET_MAX_ATTEMPTS = 5;
+const KLU_ID_MIN = 2500030000;
+const KLU_ID_MAX = 2500199999;
 
+function normalizeStudentId(id){ return String(id || '').trim(); }
+function isValidStudentId(id){
+  const value = normalizeStudentId(id);
+  return /^\d{10}$/.test(value) && Number(value) >= KLU_ID_MIN && Number(value) <= KLU_ID_MAX;
+}
+function getStudentIdError(id){
+  const value = normalizeStudentId(id);
+  if(!value) return 'Enter your Student ID.';
+  if(!/^\d{10}$/.test(value)) return 'Student ID must be exactly 10 digits.';
+  if(Number(value) < KLU_ID_MIN || Number(value) > KLU_ID_MAX) return `Student ID must be between ${KLU_ID_MIN} and ${KLU_ID_MAX}.`;
+  return '';
+}
 function getAccounts(){
   try { const accounts = JSON.parse(localStorage.getItem(AUTH_ACCOUNTS_KEY) || '[]'); if(Array.isArray(accounts)) return accounts; }
   catch {}
@@ -34,11 +48,13 @@ function saveResetState(state){ sessionStorage.setItem(RESET_STATE_KEY, JSON.str
 function clearResetState(){ sessionStorage.removeItem(RESET_STATE_KEY); }
 
 async function createAccount({name,id,email,category,password}){
-  const normalizedId = id.trim().toLowerCase();
+  const normalizedId = normalizeStudentId(id);
   const normalizedEmail = email.trim().toLowerCase();
+  const idError = getStudentIdError(normalizedId);
+  if(idError){ const error = new Error(idError); error.code = 'INVALID_ID'; throw error; }
   const accounts = getAccounts();
   const emailExists = accounts.some(user => user.email === normalizedEmail);
-  const idExists = accounts.some(user => user.id === normalizedId);
+  const idExists = accounts.some(user => normalizeStudentId(user.id) === normalizedId);
   if(emailExists){
     const error = new Error('Account already exists with this email. Please login to your existing account.');
     error.code = 'EMAIL_EXISTS';
@@ -62,6 +78,9 @@ function setLogin(user,remember){
 }
 async function loginAccount(identifier,password,remember){
   const normalized = identifier.trim().toLowerCase();
+  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)){
+    throw new Error(getStudentIdError(normalized));
+  }
   const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
   if(!user) throw new Error('No account found for that email or student ID.');
   if(user.passwordHash !== await hashPassword(password)) throw new Error('Incorrect password.');
@@ -71,6 +90,7 @@ async function loginAccount(identifier,password,remember){
 function requestPasswordReset(identifier){
   const normalized = identifier.trim().toLowerCase();
   if(!normalized) throw new Error('Enter your email or student ID.');
+  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error(getStudentIdError(normalized));
   const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
   if(!user) throw new Error('No account found for that email or student ID.');
   const state = {identifier:normalized, code:randomCode(), expiresAt:Date.now()+RESET_CODE_TTL, attempts:0, verified:false, token:null};
@@ -113,4 +133,4 @@ function requireLogin(next = location.pathname.split('/').pop() || 'index.html')
   if(isLoggedIn()) return true;
   location.href = 'login.html?next=' + encodeURIComponent(next); return false;
 }
-window.KLUArenaAuth = {createAccount,loginAccount,logoutAccount,requestPasswordReset,verifyPasswordResetCode,resetPassword,isLoggedIn,getActiveUser,requireLogin};
+window.KLUArenaAuth = {createAccount,loginAccount,logoutAccount,requestPasswordReset,verifyPasswordResetCode,resetPassword,isLoggedIn,getActiveUser,isValidStudentId,getStudentIdError,KLU_ID_MIN,KLU_ID_MAX,requireLogin};
