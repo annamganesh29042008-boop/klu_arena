@@ -37,7 +37,18 @@ async function createAccount({name,id,email,category,password}){
   const normalizedId = id.trim().toLowerCase();
   const normalizedEmail = email.trim().toLowerCase();
   const accounts = getAccounts();
-  if(accounts.some(user => user.email === normalizedEmail || user.id === normalizedId)) throw new Error('An account with this email or student ID already exists.');
+  const emailExists = accounts.some(user => user.email === normalizedEmail);
+  const idExists = accounts.some(user => user.id === normalizedId);
+  if(emailExists){
+    const error = new Error('Account already exists with this email. Please login to your existing account.');
+    error.code = 'EMAIL_EXISTS';
+    throw error;
+  }
+  if(idExists){
+    const error = new Error('Account already exists with this Student ID. Please login to your existing account.');
+    error.code = 'ID_EXISTS';
+    throw error;
+  }
   const user = {name:name.trim(),id:normalizedId,email:normalizedEmail,category,passwordHash:await hashPassword(password)};
   accounts.push(user); saveAccounts(accounts); setLogin(user,true); return publicUser(user);
 }
@@ -92,7 +103,6 @@ async function resetPassword(identifier,newPassword,resetToken){
   accounts[index].passwordHash = await hashPassword(newPassword);
   saveAccounts(accounts);
   clearResetState();
-  // End any active local session after a credential change.
   logoutAccount();
 }
 function logoutAccount(){
