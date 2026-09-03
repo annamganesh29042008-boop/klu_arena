@@ -35,45 +35,72 @@ function loadArenaPolish(){
   document.head.appendChild(link);
 }
 
+function createArenaExperience(){
+  if(document.querySelector('#arenaExperienceStyles')) return;
+  const style = document.createElement('style');
+  style.id = 'arenaExperienceStyles';
+  style.textContent = `
+    #arenaLoader{position:fixed;inset:0;z-index:2000;background:#050505;display:grid;place-items:center;pointer-events:none;opacity:1;transition:opacity .45s ease}
+    #arenaLoader.hide{opacity:0}
+    .arena-loader-inner{text-align:center}
+    .arena-loader-mark{position:relative;width:72px;height:58px;margin:0 auto 18px;display:grid;place-items:center;font:900 48px/1 var(--font-head);font-style:italic;letter-spacing:-8px;transform:skew(-8deg);animation:arenaLoaderPulse 1.2s ease-in-out infinite}
+    .arena-loader-mark span{color:var(--red)}.arena-loader-mark b{color:#fff;margin-left:-7px}
+    .arena-loader-line{width:150px;height:2px;background:#19191c;overflow:hidden;margin:auto}
+    .arena-loader-line:after{content:'';display:block;width:55%;height:100%;background:linear-gradient(90deg,transparent,var(--red),transparent);animation:arenaLoaderLine 1s ease-in-out infinite}
+    .arena-loader-text{margin-top:10px;color:#68686e;font:700 8px var(--font-head);letter-spacing:2.5px}
+    @keyframes arenaLoaderPulse{50%{transform:skew(-8deg) scale(1.05);filter:drop-shadow(0 0 15px rgba(229,9,20,.35))}}
+    @keyframes arenaLoaderLine{from{transform:translateX(-120%)}to{transform:translateX(280%)}}
+    body.arena-enter main,body.arena-enter footer{animation:arenaPageIn .55s ease both}
+    @keyframes arenaPageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    .arena-top-btn{position:fixed;right:22px;bottom:22px;width:43px;height:43px;z-index:80;border:1px solid #4c1b20;border-radius:8px;background:rgba(12,10,11,.92);backdrop-filter:blur(8px);color:#fff;cursor:pointer;font:900 20px var(--font-head);opacity:0;visibility:hidden;transform:translateY(10px);transition:.25s;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+    .arena-top-btn.show{opacity:1;visibility:visible;transform:none}.arena-top-btn:hover{background:#1a090b;border-color:var(--red);box-shadow:0 0 25px rgba(229,9,20,.15)}
+    @media(max-width:600px){.arena-top-btn{right:14px;bottom:14px}}
+    @media(prefers-reduced-motion:reduce){#arenaLoader,.arena-loader-mark,.arena-loader-line:after,body.arena-enter main,body.arena-enter footer{animation:none!important;transition:none!important}}
+  `;
+  document.head.appendChild(style);
+
+  const loader = document.createElement('div');
+  loader.id = 'arenaLoader';
+  loader.innerHTML = '<div class="arena-loader-inner"><div class="arena-loader-mark"><span>K</span><b>A</b></div><div class="arena-loader-line"></div><div class="arena-loader-text">ENTERING KLU ARENA</div></div>';
+  document.body.prepend(loader);
+  document.body.classList.add('arena-enter');
+  window.addEventListener('load', () => setTimeout(() => loader.classList.add('hide'), 160));
+  setTimeout(() => loader.classList.add('hide'), 1200);
+
+  const top = document.createElement('button');
+  top.type = 'button'; top.className = 'arena-top-btn'; top.setAttribute('aria-label','Back to top'); top.textContent = '↑';
+  document.body.appendChild(top);
+  const syncTop = () => top.classList.toggle('show', window.scrollY > 500);
+  window.addEventListener('scroll', syncTop, {passive:true});
+  top.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+}
+
 function updateNotificationIndicator(){
   const buttons = qsa('.notification-btn');
   if(!buttons.length) return;
   if(!document.querySelector('#arenaNotificationStyles')){
-    const style = document.createElement('style');
-    style.id = 'arenaNotificationStyles';
+    const style = document.createElement('style'); style.id = 'arenaNotificationStyles';
     style.textContent = '.notification-btn span{display:none!important;position:absolute;right:3px;top:3px;width:7px;height:7px;padding:0!important;background:var(--red);border-radius:50%;font-size:0!important;line-height:0!important;box-shadow:0 0 9px rgba(229,9,20,.8)}.notification-btn.has-notifications span{display:block!important}';
     document.head.appendChild(style);
   }
-  const loggedIn = arenaIsLoggedIn();
-  const seen = localStorage.getItem('kluArenaAnnouncementsSeen') === 'true';
-  buttons.forEach(btn => {
-    btn.classList.toggle('has-notifications', loggedIn && !seen);
-    btn.setAttribute('aria-label', loggedIn && !seen ? 'New announcements' : 'Announcements');
-    btn.setAttribute('title', loggedIn && !seen ? 'New announcements' : 'Announcements');
-  });
+  const loggedIn = arenaIsLoggedIn(); const seen = localStorage.getItem('kluArenaAnnouncementsSeen') === 'true';
+  buttons.forEach(btn => { btn.classList.toggle('has-notifications', loggedIn && !seen); btn.setAttribute('aria-label', loggedIn && !seen ? 'New announcements' : 'Announcements'); btn.setAttribute('title', loggedIn && !seen ? 'New announcements' : 'Announcements'); });
 }
 
 function updateAuthNavigation(){
   const actions = qs('.nav-actions');
   if(!actions || !arenaIsLoggedIn()) { updateNotificationIndicator(); return; }
   if(!document.querySelector('#arenaAccountStyles')){
-    const style = document.createElement('style');
-    style.id = 'arenaAccountStyles';
+    const style = document.createElement('style'); style.id = 'arenaAccountStyles';
     style.textContent = '.account-menu{display:flex;align-items:center;gap:10px}.account-welcome{font-size:10px;color:#aaa;white-space:nowrap}.account-welcome strong{color:#fff}.account-menu .btn{padding:9px 13px;font-size:10px}@media(max-width:900px){.account-welcome{display:none}}';
     document.head.appendChild(style);
   }
-  const user = getArenaUser();
-  actions.querySelector('a[href="login.html"]')?.remove();
-  actions.querySelector('a[href="signup.html"]')?.remove();
+  const user = getArenaUser(); actions.querySelector('a[href="login.html"]')?.remove(); actions.querySelector('a[href="signup.html"]')?.remove();
   if(!actions.querySelector('#accountMenu')){
-    const account = document.createElement('div');
-    account.id = 'accountMenu'; account.className = 'account-menu';
+    const account = document.createElement('div'); account.id = 'accountMenu'; account.className = 'account-menu';
     account.innerHTML = `<a class="btn btn-outline" href="dashboard.html">My Arena</a><button class="btn btn-outline" id="logoutBtn" type="button">Logout</button>`;
     actions.appendChild(account);
-    account.querySelector('#logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); localStorage.removeItem('kluArenaAnnouncementsSeen');
-      sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 400);
-    });
+    account.querySelector('#logoutBtn').addEventListener('click', () => { localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); localStorage.removeItem('kluArenaAnnouncementsSeen'); sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 400); });
   }
   updateNotificationIndicator();
 }
@@ -88,11 +115,8 @@ function createSearchOverlay(){
   const overlay = document.createElement('div'); overlay.id = 'searchOverlay'; overlay.className = 'search-overlay';
   overlay.innerHTML = `<div class="search-backdrop" data-search-close></div><section class="search-panel" role="dialog" aria-modal="true" aria-labelledby="searchTitle"><div class="search-panel-top"><div><p class="kicker">KLU ARENA SEARCH</p><h2 id="searchTitle">FIND YOUR <span>ARENA.</span></h2></div><button class="search-close" type="button" aria-label="Close search" data-search-close>×</button></div><form id="siteSearchForm" class="site-search-form"><input id="siteSearchInput" type="search" autocomplete="off" placeholder="Search tournaments, sports, esports or teams..." aria-label="Search KLU Arena"><button type="submit">SEARCH <span>→</span></button></form><div class="search-quick"><p>QUICK SEARCH</p><div class="search-tags"><button type="button" data-search-term="Cricket">Cricket</button><button type="button" data-search-term="Football">Football</button><button type="button" data-search-term="Badminton">Badminton</button><button type="button" data-search-term="Valorant">Valorant</button><button type="button" data-search-term="BGMI">BGMI</button><button type="button" data-search-term="CS2">CS2</button><button type="button" data-search-term="Free Fire">Free Fire</button><button type="button" data-search-term="Table Tennis">Table Tennis</button></div></div><div class="search-hint">Press <kbd>Enter</kbd> to search • Press <kbd>Esc</kbd> to close</div></section>`;
   document.body.appendChild(overlay);
-  const input = qs('#siteSearchInput');
-  const close = () => { overlay.classList.remove('open'); document.body.classList.remove('search-open'); setTimeout(() => input?.blur(), 150); };
-  const open = (term = '') => { overlay.classList.add('open'); document.body.classList.add('search-open'); input.value = term; setTimeout(() => input.focus(), 80); };
-  qsa('[data-search-close]').forEach(el => el.addEventListener('click', close));
-  qsa('[data-search-term]').forEach(btn => btn.addEventListener('click', () => { input.value = btn.dataset.searchTerm || ''; qs('#siteSearchForm').requestSubmit(); }));
+  const input = qs('#siteSearchInput'); const close = () => { overlay.classList.remove('open'); document.body.classList.remove('search-open'); setTimeout(() => input?.blur(), 150); }; const open = (term = '') => { overlay.classList.add('open'); document.body.classList.add('search-open'); input.value = term; setTimeout(() => input.focus(), 80); };
+  qsa('[data-search-close]').forEach(el => el.addEventListener('click', close)); qsa('[data-search-term]').forEach(btn => btn.addEventListener('click', () => { input.value = btn.dataset.searchTerm || ''; qs('#siteSearchForm').requestSubmit(); }));
   qs('#siteSearchForm').addEventListener('submit', e => { e.preventDefault(); const term = input.value.trim(); if(!term){ input.focus(); return; } close(); window.location.href = 'tournaments.html?search=' + encodeURIComponent(term); });
   document.addEventListener('keydown', e => { if(e.key === 'Escape' && overlay.classList.contains('open')) close(); }); window.openArenaSearch = open;
 }
@@ -105,6 +129,7 @@ function ensurePlayersNavigation(){
 }
 
 loadArenaPolish();
+createArenaExperience();
 ensurePlayersNavigation();
 const menuToggle = qs('#menuToggle'); const mainNav = qs('#mainNav');
 if(menuToggle && mainNav){ menuToggle.addEventListener('click', () => { const open = mainNav.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); }); }
