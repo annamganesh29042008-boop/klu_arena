@@ -1,0 +1,1 @@
+document.querySelectorAll('.player-sticker').forEach((sticker,index)=>{sticker.style.animationDelay=`${index*0.12}s`;const emoji=sticker.querySelector('.sticker-emoji');if(emoji) emoji.style.animationDelay=`${index*0.08}s`;});
