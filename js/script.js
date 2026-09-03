@@ -150,6 +150,23 @@ function createSearchOverlay(){
   window.openArenaSearch = open;
 }
 
+function ensurePlayersNavigation(){
+  const nav = qs('#mainNav');
+  if(!nav || nav.querySelector('a[href="players.html"]')) return;
+
+  const link = document.createElement('a');
+  link.href = 'players.html';
+  link.textContent = 'Players';
+
+  const current = (window.location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  if(current === 'players.html' || current === 'player-profile.html') link.classList.add('active');
+
+  const organizers = nav.querySelector('a[href="organizer.html"]');
+  if(organizers) organizers.before(link);
+  else nav.appendChild(link);
+}
+
+ensurePlayersNavigation();
 const menuToggle = qs('#menuToggle');
 const mainNav = qs('#mainNav');
 if(menuToggle && mainNav){ menuToggle.addEventListener('click', () => { const open = mainNav.classList.toggle('open'); menuToggle.setAttribute('aria-expanded', String(open)); }); }
