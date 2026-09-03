@@ -14,13 +14,7 @@ function isValidStudentId(id){
   const value = normalizeStudentId(id);
   return /^\d{10}$/.test(value) && Number(value) >= KLU_ID_MIN && Number(value) <= KLU_ID_MAX;
 }
-function getStudentIdError(id){
-  const value = normalizeStudentId(id);
-  if(!value) return 'Enter your Student ID.';
-  if(!/^\d{10}$/.test(value)) return 'Student ID must be exactly 10 digits.';
-  if(Number(value) < KLU_ID_MIN || Number(value) > KLU_ID_MAX) return `Student ID must be between ${KLU_ID_MIN} and ${KLU_ID_MAX}.`;
-  return '';
-}
+function getStudentIdError(id){ return 'ID not found.'; }
 function getAccounts(){
   try { const accounts = JSON.parse(localStorage.getItem(AUTH_ACCOUNTS_KEY) || '[]'); if(Array.isArray(accounts)) return accounts; }
   catch {}
@@ -50,21 +44,12 @@ function clearResetState(){ sessionStorage.removeItem(RESET_STATE_KEY); }
 async function createAccount({name,id,email,category,password}){
   const normalizedId = normalizeStudentId(id);
   const normalizedEmail = email.trim().toLowerCase();
-  const idError = getStudentIdError(normalizedId);
-  if(idError){ const error = new Error(idError); error.code = 'INVALID_ID'; throw error; }
+  if(!isValidStudentId(normalizedId)){ const error = new Error('ID not found.'); error.code = 'INVALID_ID'; throw error; }
   const accounts = getAccounts();
   const emailExists = accounts.some(user => user.email === normalizedEmail);
   const idExists = accounts.some(user => normalizeStudentId(user.id) === normalizedId);
-  if(emailExists){
-    const error = new Error('Account already exists with this email. Please login to your existing account.');
-    error.code = 'EMAIL_EXISTS';
-    throw error;
-  }
-  if(idExists){
-    const error = new Error('Account already exists with this Student ID. Please login to your existing account.');
-    error.code = 'ID_EXISTS';
-    throw error;
-  }
+  if(emailExists){ const error = new Error('Account already exists with this email. Please login to your existing account.'); error.code = 'EMAIL_EXISTS'; throw error; }
+  if(idExists){ const error = new Error('Account already exists with this Student ID. Please login to your existing account.'); error.code = 'ID_EXISTS'; throw error; }
   const user = {name:name.trim(),id:normalizedId,email:normalizedEmail,category,passwordHash:await hashPassword(password)};
   accounts.push(user); saveAccounts(accounts); setLogin(user,true); return publicUser(user);
 }
@@ -78,26 +63,22 @@ function setLogin(user,remember){
 }
 async function loginAccount(identifier,password,remember){
   const normalized = identifier.trim().toLowerCase();
-  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)){
-    throw new Error(getStudentIdError(normalized));
-  }
+  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error('ID not found.');
   const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
   if(!user) throw new Error('No account found for that email or student ID.');
   if(user.passwordHash !== await hashPassword(password)) throw new Error('Incorrect password.');
   setLogin(user,remember); return publicUser(user);
 }
-
 function requestPasswordReset(identifier){
   const normalized = identifier.trim().toLowerCase();
   if(!normalized) throw new Error('Enter your email or student ID.');
-  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error(getStudentIdError(normalized));
+  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error('ID not found.');
   const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
   if(!user) throw new Error('No account found for that email or student ID.');
   const state = {identifier:normalized, code:randomCode(), expiresAt:Date.now()+RESET_CODE_TTL, attempts:0, verified:false, token:null};
   saveResetState(state);
   return {maskedDestination: user.email.replace(/^(.{2}).*(@.*)$/, '$1••••$2'), demoCode:state.code, expiresAt:state.expiresAt};
 }
-
 function verifyPasswordResetCode(code){
   const state = getResetState();
   if(!state) throw new Error('Your reset request has expired. Start again.');
@@ -111,7 +92,6 @@ function verifyPasswordResetCode(code){
   state.verified = true; state.token = randomToken(); state.code = null; saveResetState(state);
   return {token:state.token};
 }
-
 async function resetPassword(identifier,newPassword,resetToken){
   const normalized = identifier.trim().toLowerCase();
   const state = getResetState();
@@ -121,9 +101,7 @@ async function resetPassword(identifier,newPassword,resetToken){
   const index = accounts.findIndex(account => account.email === normalized || account.id === normalized);
   if(index === -1) throw new Error('No account found for that email or student ID.');
   accounts[index].passwordHash = await hashPassword(newPassword);
-  saveAccounts(accounts);
-  clearResetState();
-  logoutAccount();
+  saveAccounts(accounts); clearResetState(); logoutAccount();
 }
 function logoutAccount(){
   localStorage.removeItem(AUTH_SESSION_KEY); localStorage.removeItem(AUTH_USER_KEY); localStorage.removeItem(AUTH_ID_KEY); localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
