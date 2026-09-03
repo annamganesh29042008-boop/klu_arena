@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Your personal KLU Arena competitor dashboard.">
+  <title>My Arena | KLU Arena</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .dashboard-wrap{padding:54px 0 80px}.dash-hero{display:grid;grid-template-columns:1.4fr .6fr;gap:18px;align-items:stretch}.dash-card{background:linear-gradient(145deg,#171012,#0b0b0c);border:1px solid #3a2024;border-radius:12px;padding:25px;position:relative;overflow:hidden}.dash-card:before{content:"";position:absolute;inset:auto -40px -70px auto;width:190px;height:190px;border-radius:50%;border:1px solid rgba(229,9,20,.16);box-shadow:0 0 0 28px rgba(229,9,20,.025),0 0 0 56px rgba(229,9,20,.018)}.dash-kicker{font-size:9px;font-weight:900;letter-spacing:2px;color:#777;margin:0 0 7px}.dash-title{font:900 46px/.92 var(--font-head);font-style:italic;margin:0}.dash-title span{color:var(--red)}.dash-sub{color:#8f8f94;max-width:620px;line-height:1.6;margin:12px 0 0}.identity{display:flex;align-items:center;gap:15px}.avatar{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:#190b0d;border:1px solid #8b222a;color:#fff;font:900 25px var(--font-head)}.identity h2{margin:0;font:900 25px var(--font-head);font-style:italic}.identity p{margin:3px 0 0;color:#777;font-size:11px}.dash-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}.metric{background:#101011;border:1px solid #2b2527;border-radius:9px;padding:18px}.metric small{display:block;color:#6d6d72;font-size:9px;font-weight:800;letter-spacing:1.2px}.metric strong{display:block;margin-top:6px;font:900 30px var(--font-head);font-style:italic}.metric em{font-style:normal;color:#777;font-size:10px}.content-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:18px}.section-box{background:#0d0d0e;border:1px solid #292527;border-radius:10px;padding:20px}.section-box h3{margin:0 0 15px;font:900 23px var(--font-head);font-style:italic}.list{display:grid;gap:9px}.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px;border:1px solid #252224;background:#111112;border-radius:7px}.item-main strong{display:block;font-size:12px}.item-main span{display:block;color:#707075;font-size:9px;margin-top:3px}.pill{font-size:8px;font-weight:900;letter-spacing:1px;padding:6px 8px;border:1px solid #4a272b;color:#d5d5d8;border-radius:4px;white-space:nowrap}.empty{color:#68686e;font-size:11px;padding:10px 0}.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}.danger{border-color:#572027!important;color:#ff9ca3!important}.security-note{margin-top:14px;color:#5e5e64;font-size:9px;line-height:1.5}.locked{display:none}.dashboard-locked .locked{display:block}.dashboard-locked .private-content{display:none}.locked{text-align:center;max-width:560px;margin:80px auto}.locked h2{font:900 42px var(--font-head);font-style:italic;margin:0}.locked p{color:#777;line-height:1.6}.mini-link{color:#ddd;text-decoration:none;font-size:9px;font-weight:800;letter-spacing:1px}.mini-link:hover{color:#fff}@media(max-width:850px){.dash-hero,.content-grid{grid-template-columns:1fr}.dash-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:520px){.dashboard-wrap{padding-top:35px}.dash-title{font-size:38px}.dash-grid{grid-template-columns:1fr 1fr}.metric strong{font-size:25px}.item{align-items:flex-start;flex-direction:column}.actions .btn{width:100%;text-align:center}}
+  </style>
+</head>
+<body>
+  <header class="site-header" id="top"><div class="container nav-wrap">
+    <a class="brand" href="index.html" aria-label="KLU Arena home"><div class="brand-mark" aria-hidden="true"><span>K</span><b>A</b></div><div class="brand-copy"><strong><span>KLU</span> ARENA</strong><small>WHERE CHAMPIONS COMPETE</small></div></a>
+    <button class="menu-toggle" id="menuToggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+    <nav class="main-nav" id="mainNav"><a href="index.html">Home</a><a href="tournaments.html">Tournaments</a><a href="sports.html">Sports</a><a href="esports.html">Esports</a><a href="leaderboard.html">Leaderboard</a><a href="teams.html">Teams</a><a href="players.html">Players</a><a href="organizer.html">Organizers</a></nav>
+    <div class="nav-actions"><button class="icon-btn" id="searchBtn" aria-label="Search">⌕</button><a class="icon-btn notification-btn" href="announcements.html" aria-label="Announcements">◔</a><a class="btn btn-outline" href="login.html">Login</a><a class="btn btn-primary" href="signup.html">Sign Up</a></div>
+  </div></header>
+
+  <main class="dashboard-wrap" id="dashboard">
+    <div class="container">
+      <section class="locked" id="lockedState"><p class="dash-kicker">PRIVATE COMPETITOR AREA</p><h2>LOGIN <span>REQUIRED.</span></h2><p>Your My Arena dashboard is personal. Log in to see your profile, teams, registrations and competition activity.</p><a class="btn btn-primary" href="login.html">Login to My Arena →</a></section>
+      <div class="private-content">
+        <section class="dash-hero">
+          <div class="dash-card"><p class="dash-kicker">COMPETITOR CONTROL CENTER</p><h1 class="dash-title">WELCOME TO <span>MY ARENA.</span></h1><p class="dash-sub">Everything connected to your KLU Arena account — identity, teams, tournament activity and your next competitive move.</p><div class="actions"><a class="btn btn-primary btn-sm" href="tournaments.html">Find a Tournament →</a><a class="btn btn-outline btn-sm" href="create-team.html">Create a Team</a></div></div>
+          <div class="dash-card"><div class="identity"><div class="avatar" id="avatar">P</div><div><h2 id="userName">Player</h2><p id="userId">KLU ID</p><p id="userEmail">email</p></div></div><p class="security-note">✓ Account verified locally • Keep your login credentials private.</p></div>
+        </section>
+
+        <section class="dash-grid" aria-label="Competition statistics"><div class="metric"><small>MY TEAMS</small><strong id="teamCount">0</strong><em>created squads</em></div><div class="metric"><small>TOURNAMENTS</small><strong id="registrationCount">0</strong><em>registrations</em></div><div class="metric"><small>ROSTER SPOTS</small><strong id="rosterCount">0</strong><em>verified members</em></div><div class="metric"><small>RANK STATUS</small><strong id="rankStatus">UNRANKED</strong><em>current standing</em></div></section>
+
+        <section class="content-grid">
+          <div class="section-box"><h3>MY TEAMS</h3><div class="list" id="teamList"></div><div class="actions"><a class="mini-link" href="teams.html">Browse Team Directory →</a><a class="mini-link" href="create-team.html">Create Another →</a></div></div>
+          <div class="section-box"><h3>TOURNAMENT ACTIVITY</h3><div class="list" id="registrationList"></div><div class="actions"><a class="mini-link" href="tournaments.html">Explore Tournaments →</a></div></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="container footer-bottom"><span>© 2026 KLU Arena. All rights reserved.</span><span>Where Champions Compete.</span></div></footer>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="js/script.js"></script><script src="js/dashboard.js"></script>
+</body>
+</html>
