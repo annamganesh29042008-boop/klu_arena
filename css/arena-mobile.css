@@ -1,0 +1,31 @@
+/* KLU ARENA — mobile polish layer */
+@media (max-width:760px){
+  html{font-size:15px} body{overflow-x:hidden}.container{width:calc(100% - 28px);max-width:none}
+  .site-header{z-index:100}.nav-wrap{min-height:64px;gap:7px}.brand{flex-shrink:1}.brand-copy strong{white-space:nowrap}.nav-actions{flex-shrink:0}.menu-toggle{order:2}.nav-actions{order:3}
+  .main-nav{z-index:110;max-height:calc(100vh - 78px);overflow:auto}.main-nav a{min-height:44px;display:flex;align-items:center}
+  .btn{min-height:42px}.btn-sm{min-height:38px}.icon-btn{min-width:40px;min-height:40px}
+  .hero{min-height:auto}.hero-copy{padding:46px 0 18px}.hero-copy>p{line-height:1.65}.hero-note{line-height:1.5}.hero-visual{overflow:hidden;margin:0 -14px}
+  .stats-grid{width:100%}.stat{min-height:76px}.stat-icon{flex-shrink:0}
+  .section{overflow:hidden}.section-heading h2{line-height:1.02}.row-heading{flex-wrap:wrap}.row-heading .text-link{margin-left:auto}
+  .arena-card-content{width:100%;max-width:100%}.arena-card p{line-height:1.6}.arena-card .btn{max-width:100%}
+  .tournament-grid,.feature-grid{gap:14px}.tournament-card{width:100%}.card-body{padding:16px}.card-footer{gap:12px}.card-footer .open-status{line-height:1.4}
+  .panel-heading{width:100%}.panel-heading .text-link{align-self:flex-end}.match-row{min-height:92px}.team{min-width:0}.team strong{overflow-wrap:anywhere}.team-badge{flex:0 0 34px}.match-time{white-space:nowrap}
+  .rank-row{min-width:0}.rank-row>*{min-width:0;overflow:hidden;text-overflow:ellipsis}.rank-row .team-name{white-space:nowrap}
+  .cta-card{width:100%}.site-footer{overflow:hidden}.footer-grid{grid-template-columns:1fr!important;gap:25px}.footer-bottom{gap:8px;flex-wrap:wrap}
+  .page-hero h1,.detail-hero h1{overflow-wrap:anywhere}.page-wrap{padding-bottom:55px}
+  .form-grid,.two-fields,.contact-grid,.dashboard-grid,.detail-layout{min-width:0}.form-group input,.form-group select,.form-group textarea,.create-form input,.create-form select,.result-form input,.result-form select,.announcement-form input,.announcement-form textarea{font-size:16px}
+  .detail-stats{gap:0}.detail-stats div{padding:11px 0;border-bottom:1px solid #242428}.detail-stats div:last-of-type{border-bottom:0}.detail-tabs{gap:16px;overflow-x:auto;scrollbar-width:none}.detail-tabs::-webkit-scrollbar{display:none}.detail-tabs button{white-space:nowrap;min-height:45px}
+  .schedule-row,.table-simple>div{overflow:hidden}.schedule-row span,.table-simple>div>*{overflow-wrap:anywhere}.scoreboard{padding:20px 14px}.score-team h2{font-size:23px}.score-event{line-height:1.4}
+  .dashboard-stats{gap:8px}.dashboard-stats>div{padding:14px}.dashboard-stats strong{font-size:26px}.dash-nav{scrollbar-width:none}.dash-nav::-webkit-scrollbar{display:none}.dash-panel{padding:16px}.event-row{gap:9px}.registration-actions{flex-wrap:wrap}
+  .activity-grid{grid-template-columns:1fr!important}.activity-card{padding:17px}
+}
+@media (max-width:430px){
+  .container{width:calc(100% - 22px)}.nav-wrap{min-height:60px}.brand-mark{width:42px;height:38px;font-size:31px}.brand-copy strong{font-size:19px}.nav-actions{gap:2px}.icon-btn{width:36px;min-width:36px}.menu-toggle{font-size:22px;padding:6px}
+  .hero-copy{padding-top:38px}.hero h1{letter-spacing:-1px}.hero-actions .btn{font-size:11px}.hero-visual{min-height:220px;height:220px}.hero-card{max-width:75%}
+  .stats-grid{grid-template-columns:1fr 1fr}.stat{padding:10px 4px;gap:8px}.stat-icon{font-size:18px}.stat strong{font-size:21px}.stat small{font-size:7px}
+  .section{padding:44px 0}.arena-card{min-height:250px}.arena-card-content{padding:24px 19px}.arena-card h3{font-size:42px}.arena-bg-symbol{font-size:100px}
+  .row-heading .text-link{font-size:10px}.panel-heading h2{font-size:23px}.rank-row{grid-template-columns:25px minmax(0,1fr) 36px 36px 44px;gap:4px;font-size:8px}.rank-row.header{font-size:6px}
+  .breadcrumb{font-size:9px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.detail-hero-inner{min-height:230px}.detail-hero h1{font-size:43px}.detail-tags span{font-size:8px;padding:7px 8px}
+  .score{font-size:44px}.score-team .team-logo{width:55px;height:55px}.score-team h2{font-size:21px}
+}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation-duration:.001ms!important;transition-duration:.001ms!important}}
