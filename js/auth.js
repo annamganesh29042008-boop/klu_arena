@@ -1,11 +1,7 @@
-const AUTH_ACCOUNTS_KEY = 'kluArenaAccounts';
+const AUTH_USER_KEY = 'kluArenaUser';
 const AUTH_SESSION_KEY = 'kluArenaLoggedIn';
 const AUTH_ID_KEY = 'kluArenaLoginId';
-const AUTH_USER_KEY = 'kluArenaUser';
 const AUTH_NOTIFICATION_SEEN_KEY = 'kluArenaAnnouncementsSeen';
-const RESET_STATE_KEY = 'kluArenaPasswordReset';
-const RESET_CODE_TTL = 10 * 60 * 1000;
-const RESET_MAX_ATTEMPTS = 5;
 const KLU_ID_MIN = 2500030000;
 const KLU_ID_MAX = 2500199999;
 
@@ -14,101 +10,177 @@ function isValidStudentId(id){
   const value = normalizeStudentId(id);
   return /^\d{10}$/.test(value) && Number(value) >= KLU_ID_MIN && Number(value) <= KLU_ID_MAX;
 }
-function getStudentIdError(id){ return 'ID not found.'; }
-function getAccounts(){
-  try { const accounts = JSON.parse(localStorage.getItem(AUTH_ACCOUNTS_KEY) || '[]'); if(Array.isArray(accounts)) return accounts; }
-  catch {}
-  return [];
+function getStudentIdError(){ return 'ID not found.'; }
+
+function firebaseReady(){
+  return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
 }
-function saveAccounts(accounts){ localStorage.setItem(AUTH_ACCOUNTS_KEY, JSON.stringify(accounts)); }
-function publicUser(user){ if(!user) return null; const {passwordHash,...safeUser} = user; return safeUser; }
+function getFirebaseAuth(){ if(!firebaseReady()) throw new Error('Firebase is not ready. Please refresh and try again.'); return firebase.auth(); }
+function getFirebaseDb(){ if(!firebaseReady()) throw new Error('Firebase is not ready. Please refresh and try again.'); return firebase.firestore(); }
+
+function publicUser(user){
+  if(!user) return null;
+  return {
+    uid: user.uid,
+    name: user.name || user.displayName || '',
+    id: normalizeStudentId(user.id || ''),
+    email: (user.email || '').toLowerCase(),
+    category: user.category || ''
+  };
+}
+function cacheUser(user){
+  const safe = publicUser(user);
+  if(!safe) return;
+  localStorage.setItem(AUTH_USER_KEY, JSON.stringify(safe));
+  localStorage.setItem(AUTH_ID_KEY, safe.email || safe.id || '');
+}
 function getActiveUser(){
-  const sessionUser = sessionStorage.getItem(AUTH_USER_KEY);
-  const persistentUser = localStorage.getItem(AUTH_USER_KEY);
-  try { return JSON.parse(sessionUser || persistentUser || 'null'); } catch { return null; }
+  try {
+    const cached = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
+    if(cached) return cached;
+  } catch {}
+  const current = firebaseReady() ? firebase.auth().currentUser : null;
+  return current ? {uid:current.uid,name:current.displayName || '',email:(current.email || '').toLowerCase()} : null;
 }
-function isLoggedIn(){ return sessionStorage.getItem(AUTH_SESSION_KEY) === 'true' || localStorage.getItem(AUTH_SESSION_KEY) === 'true'; }
-async function hashPassword(password){
-  const data = new TextEncoder().encode(password);
-  const digest = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+function isLoggedIn(){
+  return firebaseReady() ? !!firebase.auth().currentUser || localStorage.getItem(AUTH_SESSION_KEY) === 'true' : localStorage.getItem(AUTH_SESSION_KEY) === 'true';
 }
-function randomCode(){ return String(Math.floor(100000 + Math.random() * 900000)); }
-function randomToken(){ return `${Date.now().toString(36)}-${crypto.getRandomValues(new Uint32Array(2)).join('-')}`; }
-function getResetState(){
-  try { return JSON.parse(sessionStorage.getItem(RESET_STATE_KEY) || 'null'); } catch { return null; }
+async function setPersistence(remember){
+  const auth = getFirebaseAuth();
+  await auth.setPersistence(remember ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION);
 }
-function saveResetState(state){ sessionStorage.setItem(RESET_STATE_KEY, JSON.stringify(state)); }
-function clearResetState(){ sessionStorage.removeItem(RESET_STATE_KEY); }
+function mapFirebaseError(error){
+  const code = error && error.code || '';
+  const messages = {
+    'auth/email-already-in-use':'An account already exists with this email. Please login instead.',
+    'auth/invalid-email':'Please enter a valid email address.',
+    'auth/weak-password':'Password must be at least 6 characters.',
+    'auth/invalid-credential':'Incorrect email or password.',
+    'auth/user-not-found':'No account found with this email.',
+    'auth/wrong-password':'Incorrect email or password.',
+    'auth/too-many-requests':'Too many attempts. Please wait and try again.',
+    'auth/network-request-failed':'Network error. Check your internet connection and try again.'
+  };
+  const message = messages[code] || (error && error.message) || 'Authentication failed. Please try again.';
+  const e = new Error(message);
+  e.code = code;
+  return e;
+}
 
 async function createAccount({name,id,email,category,password}){
   const normalizedId = normalizeStudentId(id);
   const normalizedEmail = email.trim().toLowerCase();
-  if(!isValidStudentId(normalizedId)){ const error = new Error('ID not found.'); error.code = 'INVALID_ID'; throw error; }
-  const accounts = getAccounts();
-  const emailExists = accounts.some(user => user.email === normalizedEmail);
-  const idExists = accounts.some(user => normalizeStudentId(user.id) === normalizedId);
-  if(emailExists){ const error = new Error('Account already exists with this email. Please login to your existing account.'); error.code = 'EMAIL_EXISTS'; throw error; }
-  if(idExists){ const error = new Error('Account already exists with this Student ID. Please login to your existing account.'); error.code = 'ID_EXISTS'; throw error; }
-  const user = {name:name.trim(),id:normalizedId,email:normalizedEmail,category,passwordHash:await hashPassword(password)};
-  accounts.push(user); saveAccounts(accounts); setLogin(user,true); return publicUser(user);
+  if(!isValidStudentId(normalizedId)){ const error=new Error('ID not found.'); error.code='INVALID_ID'; throw error; }
+  if(!category){ const error=new Error('Please choose your arena.'); error.code='INVALID_CATEGORY'; throw error; }
+  if(!password || password.length < 6){ const error=new Error('Password must be at least 6 characters.'); error.code='WEAK_PASSWORD'; throw error; }
+
+  const auth = getFirebaseAuth();
+  const db = getFirebaseDb();
+  let credential = null;
+
+  try {
+    credential = await auth.createUserWithEmailAndPassword(normalizedEmail, password);
+    const user = credential.user;
+    await user.updateProfile({displayName:name.trim()});
+
+    const batch = db.batch();
+    batch.set(db.collection('users').doc(user.uid), {
+      name:name.trim(),
+      studentId:normalizedId,
+      email:normalizedEmail,
+      category,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    batch.set(db.collection('studentIds').doc(normalizedId), {
+      uid:user.uid,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    await batch.commit();
+
+    const profile = {uid:user.uid,name:name.trim(),id:normalizedId,email:normalizedEmail,category};
+    cacheUser(profile);
+    localStorage.setItem(AUTH_SESSION_KEY,'true');
+    localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
+    return profile;
+  } catch(error) {
+    if(credential && credential.user) {
+      try { await credential.user.delete(); } catch {}
+    }
+    if(error && error.code === 'permission-denied'){
+      const e=new Error('This Student ID is already registered, or your Firebase security rules need to be published.'); e.code='ID_EXISTS'; throw e;
+    }
+    if(error && error.code === 'auth/email-already-in-use') throw mapFirebaseError(error);
+    throw error && error.code && String(error.code).startsWith('auth/') ? mapFirebaseError(error) : error;
+  }
 }
-function setLogin(user,remember){
-  const storage = remember ? localStorage : sessionStorage;
-  storage.setItem(AUTH_USER_KEY,JSON.stringify(publicUser(user)));
-  storage.setItem(AUTH_SESSION_KEY,'true');
-  localStorage.setItem(AUTH_ID_KEY,user.email);
-  localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
-  if(remember){ sessionStorage.removeItem(AUTH_USER_KEY); sessionStorage.removeItem(AUTH_SESSION_KEY); }
-}
+
 async function loginAccount(identifier,password,remember){
   const normalized = identifier.trim().toLowerCase();
-  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error('ID not found.');
-  const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
-  if(!user) throw new Error('No account found for that email or student ID.');
-  if(user.passwordHash !== await hashPassword(password)) throw new Error('Incorrect password.');
-  setLogin(user,remember); return publicUser(user);
-}
-function requestPasswordReset(identifier){
-  const normalized = identifier.trim().toLowerCase();
-  if(!normalized) throw new Error('Enter your email or student ID.');
-  if(/^\d+$/.test(normalized) && !isValidStudentId(normalized)) throw new Error('ID not found.');
-  const user = getAccounts().find(account => account.email === normalized || account.id === normalized);
-  if(!user) throw new Error('No account found for that email or student ID.');
-  const state = {identifier:normalized, code:randomCode(), expiresAt:Date.now()+RESET_CODE_TTL, attempts:0, verified:false, token:null};
-  saveResetState(state);
-  return {maskedDestination: user.email.replace(/^(.{2}).*(@.*)$/, '$1••••$2'), demoCode:state.code, expiresAt:state.expiresAt};
-}
-function verifyPasswordResetCode(code){
-  const state = getResetState();
-  if(!state) throw new Error('Your reset request has expired. Start again.');
-  if(Date.now() > state.expiresAt){ clearResetState(); throw new Error('Verification code expired. Request a new code.'); }
-  if(state.attempts >= RESET_MAX_ATTEMPTS) throw new Error('Too many incorrect attempts. Request a new code.');
-  if(String(code).trim() !== state.code){
-    state.attempts += 1; saveResetState(state);
-    const remaining = RESET_MAX_ATTEMPTS - state.attempts;
-    throw new Error(remaining ? `Incorrect verification code. ${remaining} attempts remaining.` : 'Too many incorrect attempts. Request a new code.');
+  if(/^\d+$/.test(normalized)){
+    throw new Error('Please use your registered email address to log in. Student ID login will be added in the next database phase.');
   }
-  state.verified = true; state.token = randomToken(); state.code = null; saveResetState(state);
-  return {token:state.token};
+  if(!normalized) throw new Error('Enter your email address.');
+  if(!password) throw new Error('Enter your password.');
+
+  const auth = getFirebaseAuth();
+  try {
+    await setPersistence(remember);
+    const credential = await auth.signInWithEmailAndPassword(normalized,password);
+    const user = credential.user;
+    let profile = {uid:user.uid,name:user.displayName || '',id:'',email:(user.email || normalized).toLowerCase(),category:''};
+
+    try {
+      const snap = await getFirebaseDb().collection('users').doc(user.uid).get();
+      if(snap.exists){
+        const data=snap.data();
+        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
+      }
+    } catch {}
+
+    cacheUser(profile);
+    localStorage.setItem(AUTH_SESSION_KEY,'true');
+    localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
+    return profile;
+  } catch(error){ throw mapFirebaseError(error); }
 }
-async function resetPassword(identifier,newPassword,resetToken){
+
+async function requestPasswordReset(identifier){
   const normalized = identifier.trim().toLowerCase();
-  const state = getResetState();
-  if(!state || state.identifier !== normalized || !state.verified || !state.token || state.token !== resetToken) throw new Error('Verify the code before creating a new password.');
-  if(!newPassword || newPassword.length < 8) throw new Error('Password must be at least 8 characters.');
-  const accounts = getAccounts();
-  const index = accounts.findIndex(account => account.email === normalized || account.id === normalized);
-  if(index === -1) throw new Error('No account found for that email or student ID.');
-  accounts[index].passwordHash = await hashPassword(newPassword);
-  saveAccounts(accounts); clearResetState(); logoutAccount();
+  if(!normalized) throw new Error('Enter your email address.');
+  if(/^\d+$/.test(normalized)) throw new Error('Please enter the email address linked to your KLU Arena account.');
+
+  try {
+    await getFirebaseAuth().sendPasswordResetEmail(normalized);
+    return {sent:true,email:normalized};
+  } catch(error){ throw mapFirebaseError(error); }
 }
-function logoutAccount(){
-  localStorage.removeItem(AUTH_SESSION_KEY); localStorage.removeItem(AUTH_USER_KEY); localStorage.removeItem(AUTH_ID_KEY); localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
-  sessionStorage.removeItem(AUTH_SESSION_KEY); sessionStorage.removeItem(AUTH_USER_KEY);
+
+async function logoutAccount(){
+  try { if(firebaseReady()) await firebase.auth().signOut(); } catch {}
+  localStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(AUTH_USER_KEY);
+  localStorage.removeItem(AUTH_ID_KEY);
+  localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  sessionStorage.removeItem(AUTH_USER_KEY);
 }
+
 function requireLogin(next = location.pathname.split('/').pop() || 'index.html'){
   if(isLoggedIn()) return true;
-  location.href = 'login.html?next=' + encodeURIComponent(next); return false;
+  location.href = 'login.html?next=' + encodeURIComponent(next);
+  return false;
 }
-window.KLUArenaAuth = {createAccount,loginAccount,logoutAccount,requestPasswordReset,verifyPasswordResetCode,resetPassword,isLoggedIn,getActiveUser,isValidStudentId,getStudentIdError,KLU_ID_MIN,KLU_ID_MAX,requireLogin};
+
+window.KLUArenaAuth = {
+  createAccount,
+  loginAccount,
+  logoutAccount,
+  requestPasswordReset,
+  isLoggedIn,
+  getActiveUser,
+  isValidStudentId,
+  getStudentIdError,
+  KLU_ID_MIN,
+  KLU_ID_MAX,
+  requireLogin
+};
