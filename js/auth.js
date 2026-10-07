@@ -23,7 +23,7 @@ async function findUserByStudentId(id){
   const userSnap = await db.collection('users').doc(uid).get();
   if(!userSnap.exists) return null;
   const data = userSnap.data() || {};
-  return { uid, name:data.name || '', id:normalizedId, email:(data.email || '').toLowerCase(), category:data.category || '' };
+  return { uid, name:data.name || '', id:normalizedId, studentId:normalizedId, email:(data.email || '').toLowerCase(), category:data.category || '' };
 }
 
 function firebaseReady(){
@@ -37,7 +37,8 @@ function publicUser(user){
   return {
     uid: user.uid,
     name: user.name || user.displayName || '',
-    id: normalizeStudentId(user.id || ''),
+    id: normalizeStudentId(user.id || user.studentId || ''),
+    studentId: normalizeStudentId(user.studentId || user.id || ''),
     email: (user.email || '').toLowerCase(),
     category: user.category || ''
   };
@@ -121,7 +122,7 @@ async function createAccount({name,id,email,category,password}){
     });
     await batch.commit();
 
-    const profile = {uid:user.uid,name:name.trim(),id:normalizedId,email:normalizedEmail,category};
+    const profile = {uid:user.uid,name:name.trim(),id:normalizedId,studentId:normalizedId,email:normalizedEmail,category};
     cacheUser(profile);
     localStorage.setItem(AUTH_SESSION_KEY,'true');
     localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
@@ -151,13 +152,13 @@ async function loginAccount(identifier,password,remember){
     await setPersistence(remember);
     const credential = await auth.signInWithEmailAndPassword(normalized,password);
     const user = credential.user;
-    let profile = {uid:user.uid,name:user.displayName || '',id:'',email:(user.email || normalized).toLowerCase(),category:''};
+    let profile = {uid:user.uid,name:user.displayName || '',id:'',studentId:'',email:(user.email || normalized).toLowerCase(),category:''};
 
     try {
       const snap = await getFirebaseDb().collection('users').doc(user.uid).get();
       if(snap.exists){
         const data=snap.data();
-        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
+        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),studentId:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
       }
     } catch {}
 
