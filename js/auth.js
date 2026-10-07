@@ -12,6 +12,20 @@ function isValidStudentId(id){
 }
 function getStudentIdError(){ return 'ID not found.'; }
 
+async function findUserByStudentId(id){
+  const normalizedId = normalizeStudentId(id);
+  if(!isValidStudentId(normalizedId)) return null;
+  const db = getFirebaseDb();
+  const idSnap = await db.collection('studentIds').doc(normalizedId).get();
+  if(!idSnap.exists) return null;
+  const uid = idSnap.data().uid;
+  if(!uid) return null;
+  const userSnap = await db.collection('users').doc(uid).get();
+  if(!userSnap.exists) return null;
+  const data = userSnap.data() || {};
+  return { uid, name:data.name || '', id:normalizedId, studentId:normalizedId, email:(data.email || '').toLowerCase(), category:data.category || '' };
+}
+
 function firebaseReady(){
   return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
 }
@@ -23,7 +37,8 @@ function publicUser(user){
   return {
     uid: user.uid,
     name: user.name || user.displayName || '',
-    id: normalizeStudentId(user.id || ''),
+    id: normalizeStudentId(user.id || user.studentId || ''),
+    studentId: normalizeStudentId(user.studentId || user.id || ''),
     email: (user.email || '').toLowerCase(),
     category: user.category || ''
   };
@@ -35,6 +50,11 @@ function cacheUser(user){
   localStorage.setItem(AUTH_ID_KEY, safe.email || safe.id || '');
 }
 function getActiveUser(){
+  // Never return a cached profile as an authenticated user after Firebase has signed out.
+  if(firebaseReady()){
+    const current = firebase.auth().currentUser;
+    if(!current) return null;
+  }
   try {
     const cached = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
     if(cached) return cached;
@@ -43,7 +63,8 @@ function getActiveUser(){
   return current ? {uid:current.uid,name:current.displayName || '',email:(current.email || '').toLowerCase()} : null;
 }
 function isLoggedIn(){
-  return firebaseReady() ? !!firebase.auth().currentUser || localStorage.getItem(AUTH_SESSION_KEY) === 'true' : localStorage.getItem(AUTH_SESSION_KEY) === 'true';
+  // Firebase is the source of truth. Local storage is only a profile/UI cache.
+  return firebaseReady() && !!firebase.auth().currentUser;
 }
 async function setPersistence(remember){
   const auth = getFirebaseAuth();
@@ -78,6 +99,10 @@ async function createAccount({name,id,email,category,password}){
   const db = getFirebaseDb();
   let credential = null;
 
+  // Check the Student ID before creating the Auth user so duplicate IDs fail early.
+  const existingId = await db.collection('studentIds').doc(normalizedId).get();
+  if(existingId.exists){ const error=new Error('An account already exists with this Student ID. Please login instead.'); error.code='ID_EXISTS'; throw error; }
+
   try {
     credential = await auth.createUserWithEmailAndPassword(normalizedEmail, password);
     const user = credential.user;
@@ -97,7 +122,7 @@ async function createAccount({name,id,email,category,password}){
     });
     await batch.commit();
 
-    const profile = {uid:user.uid,name:name.trim(),id:normalizedId,email:normalizedEmail,category};
+    const profile = {uid:user.uid,name:name.trim(),id:normalizedId,studentId:normalizedId,email:normalizedEmail,category};
     cacheUser(profile);
     localStorage.setItem(AUTH_SESSION_KEY,'true');
     localStorage.removeItem(AUTH_NOTIFICATION_SEEN_KEY);
@@ -127,13 +152,13 @@ async function loginAccount(identifier,password,remember){
     await setPersistence(remember);
     const credential = await auth.signInWithEmailAndPassword(normalized,password);
     const user = credential.user;
-    let profile = {uid:user.uid,name:user.displayName || '',id:'',email:(user.email || normalized).toLowerCase(),category:''};
+    let profile = {uid:user.uid,name:user.displayName || '',id:'',studentId:'',email:(user.email || normalized).toLowerCase(),category:''};
 
     try {
       const snap = await getFirebaseDb().collection('users').doc(user.uid).get();
       if(snap.exists){
         const data=snap.data();
-        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
+        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),studentId:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
       }
     } catch {}
 
@@ -156,7 +181,11 @@ async function requestPasswordReset(identifier){
 }
 
 async function logoutAccount(){
-  try { if(firebaseReady()) await firebase.auth().signOut(); } catch {}
+  try {
+    if(firebaseReady()) await firebase.auth().signOut();
+  } catch(error) {
+    // Clear local UI state even if the network is temporarily unavailable.
+  }
   localStorage.removeItem(AUTH_SESSION_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
   localStorage.removeItem(AUTH_ID_KEY);
@@ -171,6 +200,17 @@ function requireLogin(next = location.pathname.split('/').pop() || 'index.html')
   return false;
 }
 
+if(firebaseReady()){
+  firebase.auth().onAuthStateChanged(user => {
+    if(!user){
+      localStorage.removeItem(AUTH_SESSION_KEY);
+      localStorage.removeItem(AUTH_USER_KEY);
+      localStorage.removeItem(AUTH_ID_KEY);
+    }
+    window.dispatchEvent(new CustomEvent('kluArenaAuthChanged',{detail:{user}}));
+  });
+}
+
 window.KLUArenaAuth = {
   createAccount,
   loginAccount,
@@ -180,6 +220,7 @@ window.KLUArenaAuth = {
   getActiveUser,
   isValidStudentId,
   getStudentIdError,
+  findUserByStudentId,
   KLU_ID_MIN,
   KLU_ID_MAX,
   requireLogin

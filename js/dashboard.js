@@ -1,5 +1,5 @@
 (() => {
-  const loggedIn = typeof arenaIsLoggedIn === 'function' && arenaIsLoggedIn();
+  const loggedIn = window.KLUArenaAuth && typeof window.KLUArenaAuth.isLoggedIn === 'function' ? window.KLUArenaAuth.isLoggedIn() : (typeof arenaIsLoggedIn === 'function' && arenaIsLoggedIn());
   const privateContent = document.querySelector('.private-content');
   const locked = document.querySelector('#lockedState');
   if (!loggedIn) {
@@ -8,7 +8,7 @@
     return;
   }
 
-  const user = typeof getArenaUser === 'function' ? getArenaUser() : null;
+  const user = window.KLUArenaAuth && typeof window.KLUArenaAuth.getActiveUser === 'function' ? window.KLUArenaAuth.getActiveUser() : (typeof getArenaUser === 'function' ? getArenaUser() : null);
   if (!user) return;
 
   const $ = id => document.getElementById(id);
@@ -22,7 +22,7 @@
   try { teams = JSON.parse(localStorage.getItem('kluArenaTeams') || '[]'); } catch {}
   try { registrations = JSON.parse(localStorage.getItem('kluArenaRegistration') || 'null'); registrations = registrations ? [registrations] : []; } catch {}
 
-  const myTeams = teams.filter(t => String(t.captainId || '') === String(user.studentId || ''));
+  const myTeams = teams.filter(t => String(t.captainId || '') === String(user.id || user.id || user.studentId || ''));
   const memberIds = new Set();
   myTeams.forEach(t => (t.members || []).forEach(m => memberIds.add(String(m.studentId || m.id || m))));
 
