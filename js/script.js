@@ -100,7 +100,7 @@ function updateAuthNavigation(){
     const account = document.createElement('div'); account.id = 'accountMenu'; account.className = 'account-menu';
     account.innerHTML = `<a class="btn btn-outline" href="dashboard.html">My Arena</a><button class="btn btn-outline" id="logoutBtn" type="button">Logout</button>`;
     actions.appendChild(account);
-    account.querySelector('#logoutBtn').addEventListener('click', async () => { const btn=account.querySelector('#logoutBtn'); btn.disabled=true; try { if(window.KLUArenaAuth && typeof window.KLUArenaAuth.logoutAccount === 'function') { await window.KLUArenaAuth.logoutAccount(); } else { localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); localStorage.removeItem('kluArenaAnnouncementsSeen'); sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); } showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 300); } finally { btn.disabled=false; } });
+    account.querySelector('#logoutBtn').addEventListener('click', () => { localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); localStorage.removeItem('kluArenaAnnouncementsSeen'); sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 400); });
   }
   updateNotificationIndicator();
 }

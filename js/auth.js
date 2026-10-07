@@ -12,6 +12,20 @@ function isValidStudentId(id){
 }
 function getStudentIdError(){ return 'ID not found.'; }
 
+async function findUserByStudentId(id){
+  const normalizedId = normalizeStudentId(id);
+  if(!isValidStudentId(normalizedId)) return null;
+  const db = getFirebaseDb();
+  const idSnap = await db.collection('studentIds').doc(normalizedId).get();
+  if(!idSnap.exists) return null;
+  const uid = idSnap.data().uid;
+  if(!uid) return null;
+  const userSnap = await db.collection('users').doc(uid).get();
+  if(!userSnap.exists) return null;
+  const data = userSnap.data() || {};
+  return { uid, name:data.name || '', id:normalizedId, email:(data.email || '').toLowerCase(), category:data.category || '' };
+}
+
 function firebaseReady(){
   return typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length > 0;
 }
@@ -196,6 +210,7 @@ window.KLUArenaAuth = {
   getActiveUser,
   isValidStudentId,
   getStudentIdError,
+  findUserByStudentId,
   KLU_ID_MIN,
   KLU_ID_MAX,
   requireLogin
