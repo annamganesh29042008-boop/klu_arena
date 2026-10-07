@@ -19,6 +19,8 @@ function getArenaUser(){
 }
 
 function arenaIsLoggedIn(){
+  // Firebase is the authentication source of truth. Legacy storage is only a UI cache.
+  if(window.KLUArenaAuth && typeof window.KLUArenaAuth.isLoggedIn === 'function') return window.KLUArenaAuth.isLoggedIn();
   return sessionStorage.getItem('kluArenaLoggedIn') === 'true' || localStorage.getItem('kluArenaLoggedIn') === 'true';
 }
 
@@ -100,7 +102,7 @@ function updateAuthNavigation(){
     const account = document.createElement('div'); account.id = 'accountMenu'; account.className = 'account-menu';
     account.innerHTML = `<a class="btn btn-outline" href="dashboard.html">My Arena</a><button class="btn btn-outline" id="logoutBtn" type="button">Logout</button>`;
     actions.appendChild(account);
-    account.querySelector('#logoutBtn').addEventListener('click', () => { localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); localStorage.removeItem('kluArenaAnnouncementsSeen'); sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 400); });
+    account.querySelector('#logoutBtn').addEventListener('click', async () => { try { if(window.KLUArenaAuth) await window.KLUArenaAuth.logoutAccount(); else { localStorage.removeItem('kluArenaLoggedIn'); localStorage.removeItem('kluArenaUser'); localStorage.removeItem('kluArenaLoginId'); sessionStorage.removeItem('kluArenaLoggedIn'); sessionStorage.removeItem('kluArenaUser'); } } finally { localStorage.removeItem('kluArenaAnnouncementsSeen'); showToast('Logged out successfully.'); setTimeout(() => location.href = 'index.html', 400); } });
   }
   updateNotificationIndicator();
 }
