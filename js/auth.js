@@ -43,8 +43,7 @@ function getActiveUser(){
   return current ? {uid:current.uid,name:current.displayName || '',email:(current.email || '').toLowerCase()} : null;
 }
 function isLoggedIn(){
-  // Firebase is the source of truth. Local storage is only a profile/UI cache.
-  return firebaseReady() && !!firebase.auth().currentUser;
+  return firebaseReady() ? !!firebase.auth().currentUser || localStorage.getItem(AUTH_SESSION_KEY) === 'true' : localStorage.getItem(AUTH_SESSION_KEY) === 'true';
 }
 async function setPersistence(remember){
   const auth = getFirebaseAuth();
@@ -157,11 +156,7 @@ async function requestPasswordReset(identifier){
 }
 
 async function logoutAccount(){
-  try {
-    if(firebaseReady()) await firebase.auth().signOut();
-  } catch(error) {
-    // Clear local UI state even if the network is temporarily unavailable.
-  }
+  try { if(firebaseReady()) await firebase.auth().signOut(); } catch {}
   localStorage.removeItem(AUTH_SESSION_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
   localStorage.removeItem(AUTH_ID_KEY);
@@ -174,17 +169,6 @@ function requireLogin(next = location.pathname.split('/').pop() || 'index.html')
   if(isLoggedIn()) return true;
   location.href = 'login.html?next=' + encodeURIComponent(next);
   return false;
-}
-
-if(firebaseReady()){
-  firebase.auth().onAuthStateChanged(user => {
-    if(!user){
-      localStorage.removeItem(AUTH_SESSION_KEY);
-      localStorage.removeItem(AUTH_USER_KEY);
-      localStorage.removeItem(AUTH_ID_KEY);
-    }
-    window.dispatchEvent(new CustomEvent('kluArenaAuthChanged',{detail:{user}}));
-  });
 }
 
 window.KLUArenaAuth = {
