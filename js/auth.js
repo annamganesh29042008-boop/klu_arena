@@ -93,6 +93,10 @@ async function createAccount({name,id,email,category,password}){
   const db = getFirebaseDb();
   let credential = null;
 
+  // Check the Student ID before creating the Auth user so duplicate IDs fail early.
+  const existingId = await db.collection('studentIds').doc(normalizedId).get();
+  if(existingId.exists){ const error=new Error('An account already exists with this Student ID. Please login instead.'); error.code='ID_EXISTS'; throw error; }
+
   try {
     credential = await auth.createUserWithEmailAndPassword(normalizedEmail, password);
     const user = credential.user;
