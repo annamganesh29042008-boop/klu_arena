@@ -49,6 +49,11 @@ function cacheUser(user){
   localStorage.setItem(AUTH_ID_KEY, safe.email || safe.id || '');
 }
 function getActiveUser(){
+  // Never return a cached profile as an authenticated user after Firebase has signed out.
+  if(firebaseReady()){
+    const current = firebase.auth().currentUser;
+    if(!current) return null;
+  }
   try {
     const cached = JSON.parse(localStorage.getItem(AUTH_USER_KEY) || 'null');
     if(cached) return cached;
