@@ -133,7 +133,7 @@ async function loginAccount(identifier,password,remember){
       const snap = await getFirebaseDb().collection('users').doc(user.uid).get();
       if(snap.exists){
         const data=snap.data();
-        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || ''};
+        profile={uid:user.uid,name:data.name || profile.name,id:normalizeStudentId(data.studentId || ''),email:data.email || profile.email,category:data.category || '',role:data.role === 'admin' ? 'admin' : 'user'};
       }
     } catch {}
 
