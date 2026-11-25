@@ -20,3 +20,7 @@
 .entry-card .hint a{color:#ff6972}
 .admin-entry{background:linear-gradient(145deg,#19151a,#101015);border-color:#503039}
 @media(max-width:650px){.entry-panel{grid-template-columns:1fr}}
+
+/* Role choice shown after clicking Login */
+.login-choice-actions{display:grid;gap:12px;margin:24px 0 18px}
+.login-choice-actions .button{min-height:48px}
