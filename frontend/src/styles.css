@@ -10,3 +10,13 @@
 .demo-steps code{color:#ff737b}
 .demo-page .hero-copy{margin-top:18px}
 @media(max-width:700px){.demo-grid{grid-template-columns:1fr}.demo-card{padding:20px}}
+
+/* Initial role-selection panel */
+.entry-panel{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;max-width:850px;margin-top:30px}
+.entry-card{padding:25px;display:flex;flex-direction:column;align-items:flex-start}
+.entry-card h2{font:900 30px 'Barlow Condensed',sans-serif;margin:12px 0 4px}
+.entry-card p{max-width:360px}
+.entry-card .hint{margin-top:14px}
+.entry-card .hint a{color:#ff6972}
+.admin-entry{background:linear-gradient(145deg,#19151a,#101015);border-color:#503039}
+@media(max-width:650px){.entry-panel{grid-template-columns:1fr}}
